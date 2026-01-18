@@ -1,29 +1,44 @@
+/* tracked */
+ENTRY(Reset_Handler)
+
 MEMORY
 {
-  FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 256K
-  RAM   (rwx): ORIGIN = 0x20000000, LENGTH = 64K
+    FLASH (rx)  : ORIGIN = 0x00000000, LENGTH = 256K
+    RAM   (rwx) : ORIGIN = 0x20000000, LENGTH = 64K
 }
+
+_estack = ORIGIN(RAM) + LENGTH(RAM);
 
 SECTIONS
 {
-  .text : {
-    *(.isr_vector)
-    *(.text*)
-  } > FLASH
+    /* Vector table must be first */
+    .isr_vector :
+    {
+        KEEP(*(.isr_vector))
+    } > FLASH
 
-  .data : {
-    _sdata = .;
-    *(.data*)
-    _edata = .;
-  } > RAM AT > FLASH
+    .text :
+    {
+        *(.text*)
+        *(.rodata*)
+    } > FLASH
 
-  _sidata = LOADADDR(.data);
+    /* Initialized data */
+    .data : AT (ADDR(.text) + SIZEOF(.text))
+    {
+        _sdata = .;
+        *(.data*)
+        _edata = .;
+    } > RAM
 
-  .bss : {
-    _sbss = .;
-    *(.bss*)
-    *(COMMON)
-    _ebss = .;
-  } > RAM
+    /* Uninitialized data */
+    .bss :
+    {
+        _sbss = .;
+        *(.bss*)
+        *(COMMON)
+        _ebss = .;
+    } > RAM
 }
 
+_sidata = LOADADDR(.data);
